@@ -25,7 +25,7 @@ The script supports the following Word document file extensions:
 
 ## Usage
 1. change this line "@echo off PowerShell -ExecutionPolicy Bypass -File "C:\Path\To\BaS\BaS\BackupAndSort.ps1"" to your actual path
-2. click launch.bat or just run with powershell lol
+2. click launch.bat or just run with powershell
 
 ## Requirements
 - PowerShell 1.0
