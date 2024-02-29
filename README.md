@@ -24,7 +24,7 @@ The script supports the following Word document file extensions:
 - .dotm
 
 ## Usage
-1. change this line "@echo off PowerShell -ExecutionPolicy Bypass -File "C:\Path\To\BaS\BaS\BackupAndSort.ps1"" to your actual path
+1. change this line "@echo off PowerShell -ExecutionPolicy Bypass -File "C:\Path\To\BaS\BackupAndSort.ps1"" to your actual path
 2. click launch.bat or just run with powershell
 
 ## Requirements
