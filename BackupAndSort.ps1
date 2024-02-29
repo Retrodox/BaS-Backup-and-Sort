@@ -1,6 +1,6 @@
 # Welcome message
 Write-Host "Welcome to Backup and Sort which was made by Jared!"
-Write-Host "Scanning Hard Drive for how many document folders there are and where they are.."
+Write-Host "Scanning Hard Drive.."
 
 # Define the source directories
 $sourceDirectories = @("$env:USERPROFILE\Desktop", "$env:USERPROFILE\Downloads", "$env:USERPROFILE\Documents", "$env:USERPROFILE\Pictures")
@@ -15,10 +15,10 @@ $wordDocCounts = @()
 foreach ($sourceDirectory in $sourceDirectories) {
     $count = 0
     foreach ($extension in $wordDocExtensions) {
-        $count += (Get-ChildItem -Path $sourceDirectory -Filter "*$extension" -ErrorAction SilentlyContinue).Count
+        $count += (Get-ChildItem -Path $sourceDirectory -Filter "*$extension" -Recurse -ErrorAction SilentlyContinue).Count
     }
     $wordDocCounts += $count
-    Write-Host "$($sourceDirectories.IndexOf($sourceDirectory) + 1). $(Split-Path $sourceDirectory -Leaf) - $count Word"
+    Write-Host "$($sourceDirectories.IndexOf($sourceDirectory) + 1). $(Split-Path $sourceDirectory -Leaf) - $count Word documents"
 }
 
 # Prompt the user to skip any folders
