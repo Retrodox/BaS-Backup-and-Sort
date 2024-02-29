@@ -1,2 +1,2 @@
 @echo off
-PowerShell -ExecutionPolicy Bypass -File "C:\Users\e087037\Desktop\BaS\BackupAndSort.ps1"
+PowerShell -ExecutionPolicy Bypass -File "C:\Path\To\BaS\BaS\BackupAndSort.ps1"
