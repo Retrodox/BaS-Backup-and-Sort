@@ -8,18 +8,28 @@ $sourceDirectories = @("$env:USERPROFILE\Desktop", "$env:USERPROFILE\Downloads",
 # Define the Word document file extensions
 $wordDocExtensions = @('.doc', '.docx', '.dot', '.dotx', '.docm', '.dotm')
 
-# Initialize an array to hold the count of Word documents in each directory
-$wordDocCounts = @()
+# Initialize a list to hold unique file paths and a hashtable to track files by name
+$filePathsByName = @{}
 
 # Count Word documents in each directory
 foreach ($sourceDirectory in $sourceDirectories) {
-    $count = 0
-    foreach ($extension in $wordDocExtensions) {
-        $count += (Get-ChildItem -Path $sourceDirectory -Filter "*$extension" -Recurse -ErrorAction SilentlyContinue).Count
+    $filesInDirectory = Get-ChildItem -Path $sourceDirectory -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in $wordDocExtensions }
+    $count = $filesInDirectory.Count
+    foreach ($file in $filesInDirectory) {
+        $fileNameWithExtension = $file.Name
+        if (-not $filePathsByName.ContainsKey($fileNameWithExtension)) {
+            $filePathsByName[$fileNameWithExtension] = @($file.FullName)
+        } else {
+            $existingPaths = $filePathsByName[$fileNameWithExtension]
+            if (-not $existingPaths.Contains($file.FullName)) {
+                $filePathsByName[$fileNameWithExtension] += $file.FullName
+            }
+        }
     }
     $wordDocCounts += $count
     Write-Host "$($sourceDirectories.IndexOf($sourceDirectory) + 1). $(Split-Path $sourceDirectory -Leaf) - $count Word documents"
 }
+
 
 # Prompt the user to skip any folders
 Write-Host "Would you like to skip over any folders that are listed above? Please type in the number associated above to each respective folder that you would like to skip over followed by enter. After finishing please type in 'r'"
@@ -39,6 +49,33 @@ while ($true) {
 # Filter out the folders to be skipped
 $foldersToProcess = $sourceDirectories | Where-Object { $skipFolders -notcontains $sourceDirectories.IndexOf($_) }
 
+# Prompt user for selection if duplicates are found
+foreach ($fileName in $keysCopy) {
+    if ($filePathsByName[$fileName].Count -gt 1) {
+        Write-Host "Multiple instances of the same file detected!"
+        $i = 1
+        foreach ($filePath in $filePathsByName[$fileName]) {
+            if (Test-Path $filePath) {
+                $file = Get-Item -Path $filePath
+                Write-Host "$i. $filePath - Last modified $($file.LastWriteTime.ToString('MM/dd/yyyy - hh:mm tt'))"
+                $i++
+            }
+        }
+        $selection = Read-Host "Please Select 1 out of the following files to save by entering the number associated"
+        if ($selection -match '^\d+$' -and [int]$selection -gt 0 -and [int]$selection -le $i - 1) {
+            $selectedFilePath = $filePathsByName[$fileName][$selection - 1]
+            # Update filePathsByName to only include the selected file
+            $filePathsByName[$fileName] = @($selectedFilePath)
+        } else {
+            Write-Host "Invalid selection. Please enter a number between 1 and $($i - 1)."
+        }
+    }
+}
+
+# Flatten the list of unique file paths
+$uniqueFilePaths = $filePathsByName.Values | ForEach-Object { $_ } | Select-Object -Unique
+
+
 # Define the backup directory on the desktop with today's date in month_day_year format
 $backupDirectory = "$env:USERPROFILE\Desktop\Backup_$(Get-Date -Format 'MM_dd_yyyy')"
 
@@ -54,15 +91,11 @@ if (-not (Test-Path $wordDocsDirectory)) {
 }
 
 # Copy Word documents to the Word Docs directory
-foreach ($sourceDirectory in $foldersToProcess) {
-    foreach ($extension in $wordDocExtensions) {
-        $files = Get-ChildItem -Path $sourceDirectory -Filter "*$extension" -Recurse -ErrorAction SilentlyContinue
-        foreach ($file in $files) {
-            $destinationPath = Join-Path -Path $wordDocsDirectory -ChildPath $file.Name
-            if ($file.FullName -ne $destinationPath) {
-                Copy-Item -Path $file.FullName -Destination $destinationPath
-            }
-        }
+foreach ($filePath in $uniqueFilePaths) {
+    $file = Get-Item $filePath
+    $destinationPath = Join-Path -Path $wordDocsDirectory -ChildPath $file.Name
+    if ($file.FullName -ne $destinationPath) {
+        Copy-Item -Path $file.FullName -Destination $destinationPath
     }
 }
 
